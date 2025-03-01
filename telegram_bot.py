@@ -4,7 +4,7 @@ from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
 
 # ✅ Yahan apna Telegram Bot Token daal
-BOT_TOKEN = "123456789:ABCDEF..."  
+BOT_TOKEN = "7992226765:AAGjm1bRrt_lgpA6JlNBJmxLNofu8CYXX8E"  
 
 # ✅ Teri binary ka path
 BINARY_PATH = "./raja_patched"
